@@ -1,5 +1,5 @@
 WARNS=-Wall -Wextra -g
-LIBS=-lraylib
+LIBS=-lraylib -lm
 CC=gcc
 all:
 	mkdir -p ./build/
