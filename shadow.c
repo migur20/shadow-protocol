@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MOD(v) (v < 0)?-v:v
+
 char logBuf[128];
 
 void Log(Player player) {
@@ -14,9 +16,16 @@ void Log(Player player) {
 
 void DrawPlayer(Player *p) { DrawRectangleV(p->pos, p->size, PLAYER_COLOR); }
 
+Vector2 GetGuardFacing(Guard *g){
+	if(g->facing > 0)
+		return Vector2Rotate(GUARD_SIZE_VEC, 2*PI - g->facing);
+	else
+		return Vector2Rotate(GUARD_SIZE_VEC, g->facing);
+}
+
 Vector2 *GetVertices(Guard *g) {
   Vector2 *vertices = malloc(sizeof(Vector2) * 3);
-  Vector2 facing = Vector2Rotate(GUARD_SIZE_VEC, g->facing);
+  Vector2 facing = GetGuardFacing(g);
   vertices[0] = Vector2Add(g->pos, Vector2Rotate(facing, PI));
   vertices[1] =
       Vector2Add(g->pos, Vector2Rotate(facing, GUARD_ANGLE_DIFF + PI));
@@ -40,12 +49,15 @@ void DrawGuard(Guard *g) {
   free(v);
 }
 
-void HandlePlayerMovement(Player *player, Vector2 move, double delta) {
+void HandlePlayerMovement(Player *player, double delta) {
+	 Vector2 move = (Vector2){IsKeyDown(RIGHT_KEY) - IsKeyDown(LEFT_KEY),
+                    IsKeyDown(DOWN_KEY) - IsKeyDown(UP_KEY)};
   // Linear Interpolation
   double lerp_weight =
       delta * ((move.x == 0 && move.y == 0) ? FRICTION : PLAYER_ACC);
   player->vel = Vector2Lerp(player->vel, Vector2Scale(move, PLAYER_MAX_SPEED),
                             lerp_weight);
+  player->pos = Vector2Add(player->pos, player->vel);
 }
 
 bool CheckCollisionPlayerGuard(Player *p, Guard *g) {
@@ -76,18 +88,23 @@ bool CheckCollisionPlayerGuard(Player *p, Guard *g) {
 }
 
 void UpdateGuard(Guard *g, int waypoint, double delta) {
-  Vector2 facing = Vector2Rotate(GUARD_SIZE_VEC, g->facing);
+	Vector2 facing = GetGuardFacing(g);
+  Vector2 waypointPos = g->waypoints[waypoint];
   if (!g->walking) {
-    Vector2 waypointPos = g->waypoints[waypoint];
     Vector2 towardsWaypoint = Vector2Subtract(waypointPos, g->pos);
     double angle = Vector2Angle(towardsWaypoint, facing);
-    if ((angle < 0)?-angle:angle <= GUARD_ANGULAR_VEL) {
-      g->facing += angle;
+		//printf("| %f %f |", MOD(angle)*RAD2DEG, (GUARD_ANGULAR_VEL*RAD2DEG*delta)/2);
+
+    if ( MOD(angle)*RAD2DEG < (GUARD_ANGULAR_VEL*RAD2DEG*delta)/2){
       g->walking = true;
       return;
     }
     g->facing += ((angle > 0) ? -1 : 1) * GUARD_ANGULAR_VEL * delta;
   } else {
-    g->pos = Vector2Add(g->pos, Vector2Scale(Vector2Normalize(facing), 10));
+		if(CheckCollisionPointCircle(g->pos, waypointPos, 10)){
+			g->currWaypoint = waypoint;
+			g->walking = false;
+		}
+    g->pos = Vector2Add(g->pos, Vector2Scale(Vector2Normalize(facing), 2));
   }
 }

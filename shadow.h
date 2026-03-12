@@ -33,7 +33,7 @@ typedef struct{
 #define GUARD_ANGLE_DIFF (PI*2.0)/3.0  // "(PI*2.0)3.0" for equilateral triangle
 #define GUARD_CONE_SIZE 150
 #define GUARD_CONE_COLOR (Color){253, 249, 0, 50}
-#define GUARD_SIZE_VEC (Vector2){-GUARD_RADIUS, 0}
+#define GUARD_SIZE_VEC (Vector2){GUARD_RADIUS, 0}
 
 typedef struct{
 	Vector2 pos;         //Middle of the triangle
@@ -49,7 +49,7 @@ void DrawGuard(Guard *g);
 
 void UpdateGuard(Guard *g, int waypoint, double delta);
 
-void HandlePlayerMovement(Player *player, Vector2 move, double delta);
+void HandlePlayerMovement(Player *player, double delta);
 
 void Log(Player player);
 

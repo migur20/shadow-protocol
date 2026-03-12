@@ -1,7 +1,7 @@
 #include "shadow.h"
 #include <raylib.h>
+#include <stdio.h>
 #include <raymath.h>
-#include <stdlib.h>
 
 #define DEATH_TEXT "GAME OVER"
 #define DEATH_TEXT_SIZE 50.0
@@ -15,7 +15,7 @@
 
 const int screenWidth = 900;
 const int screenHeight = 900;
-const Vector2 center = {(double)screenWidth / 2, (double)screenHeight / 2};
+#define center (Vector2){(double)screenWidth / 2, (double)screenHeight / 2}
 
 void DrawGameOver() {
   DrawText(DEATH_TEXT, center.x - (double)DEATH_TEXT_WIDTH / 2, DEATH_TEXT_Y,
@@ -37,36 +37,55 @@ int main() {
   };
 
   Guard guard1 = {
-      .facing = 0,
+      .facing = PI/2,
       .currWaypoint = 0,
-			.waypoints = {{center.x - 100, center.y - 100}, {center.x + 100, center.y - 100}},
+			.waypoints = {{center.x - 100, center.y - 100}, {center.x + 100, center.y + 100}},
 			.walking = false,
   };
 	guard1.pos = guard1.waypoints[0];
 
-  Vector2 move;
-  double delta;
-  while (!WindowShouldClose()) {
-    delta = GetFrameTime();
-    move = (Vector2){IsKeyDown(RIGHT_KEY) - IsKeyDown(LEFT_KEY),
-                     IsKeyDown(DOWN_KEY) - IsKeyDown(UP_KEY)};
-    // Player Movement
-    HandlePlayerMovement(&player, move, delta);
-    player.pos = Vector2Add(player.pos, player.vel);
+  Guard guard2 = {
+      .facing = PI/2,
+			.currWaypoint = 0,
+			.waypoints = {{center.x - 100, center.y + 100}, {center.x + 100, center.y - 100}},
+			.walking = false,
+	};
+	guard2.pos = guard2.waypoints[0];
 
-		UpdateGuard(&guard1, 1, delta);
+	Vector2 move;
+	double delta;
+	while (!WindowShouldClose()) {
+		delta = GetFrameTime();
+		if(delta == 0)
+			delta = 1.0 / FPS;
+
+		//Player Movement
+		HandlePlayerMovement(&player, delta);
+
+		UpdateGuard(&guard1, 1 - guard1.currWaypoint, delta);
+		UpdateGuard(&guard2, 1 - guard2.currWaypoint, delta);
 
     BeginDrawing();
     {
       ClearBackground(BG);
+
       DrawGuard(&guard1);
+      DrawGuard(&guard2);
       DrawPlayer(&player);
 
 			DrawCircleV(guard1.waypoints[0], 10, SKYBLUE);
 			DrawCircleV(guard1.waypoints[1], 10, SKYBLUE);
+			DrawCircleV(guard2.waypoints[0], 10, MAROON);
+			DrawCircleV(guard2.waypoints[1], 10, MAROON);
     }
     DrawFPS(5, 5);
     EndDrawing();
+
+		// int c;
+		// if((c = getchar()) == 'n')
+		// 	continue;
+		// else if(c == 'q')
+		// 	break;
   }
 
   CloseWindow();
