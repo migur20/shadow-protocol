@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MOD(v) (v < 0)?-v:v
+#define MOD(v) (v < 0) ? -v : v
 
 char logBuf[128];
 
@@ -16,11 +16,13 @@ void Log(Player player) {
 
 void DrawPlayer(Player *p) { DrawRectangleV(p->pos, p->size, PLAYER_COLOR); }
 
-Vector2 GetGuardFacing(Guard *g){
-	if(g->facing > 0)
-		return Vector2Rotate(GUARD_SIZE_VEC, 2*PI - g->facing);
-	else
-		return Vector2Rotate(GUARD_SIZE_VEC, g->facing);
+Vector2 GetGuardFacing(Guard *g) {
+  if (g->facing > 0)
+    return Vector2Rotate(Vector2Scale(FACING_ZERO_VEC, GUARD_RADIUS),
+                         2 * PI - g->facing);
+  else
+    return Vector2Rotate(Vector2Scale(FACING_ZERO_VEC, GUARD_RADIUS),
+                         g->facing);
 }
 
 Vector2 *GetVertices(Guard *g) {
@@ -50,8 +52,8 @@ void DrawGuard(Guard *g) {
 }
 
 void HandlePlayerMovement(Player *player, double delta) {
-	 Vector2 move = (Vector2){IsKeyDown(RIGHT_KEY) - IsKeyDown(LEFT_KEY),
-                    IsKeyDown(DOWN_KEY) - IsKeyDown(UP_KEY)};
+  Vector2 move = (Vector2){IsKeyDown(RIGHT_KEY) - IsKeyDown(LEFT_KEY),
+                           IsKeyDown(DOWN_KEY) - IsKeyDown(UP_KEY)};
   // Linear Interpolation
   double lerp_weight =
       delta * ((move.x == 0 && move.y == 0) ? FRICTION : PLAYER_ACC);
@@ -87,24 +89,35 @@ bool CheckCollisionPlayerGuard(Player *p, Guard *g) {
   return false;
 }
 
-void UpdateGuard(Guard *g, int waypoint, double delta) {
-	Vector2 facing = GetGuardFacing(g);
-  Vector2 waypointPos = g->waypoints[waypoint];
-  if (!g->walking) {
-    Vector2 towardsWaypoint = Vector2Subtract(waypointPos, g->pos);
-    double angle = Vector2Angle(towardsWaypoint, facing);
-		//printf("| %f %f |", MOD(angle)*RAD2DEG, (GUARD_ANGULAR_VEL*RAD2DEG*delta)/2);
+// void UpdateGuard(Guard *g, int waypoint, double delta) {
+//   Vector2 facing = GetGuardFacing(g);
+//   Vector2 waypointPos = g->waypoints[waypoint];
+//   if (!g->walking) {
+//     Vector2 towardsWaypoint = Vector2Subtract(waypointPos, g->pos);
+//     double angle = Vector2Angle(towardsWaypoint, facing);
+//     printf("| %f %f |", MOD(angle)*RAD2DEG,
+//     (GUARD_ANGULAR_VEL*RAD2DEG*delta)/2);
+//
+// //(GUARD_ANGULAR_VEL*RAD2DEG*delta)/2
+//     if ( MOD(angle)*RAD2DEG == 0){
+//       g->walking = true;
+//       return;
+//     }
+//
+//     g->facing += ((angle > 0) ? -1 : 1) * GUARD_ANGULAR_VEL * delta;
+//   } else {
+//     if (CheckCollisionPointCircle(g->pos, waypointPos, 10)) {
+//       g->currWaypoint = waypoint;
+//       g->walking = false;
+//     }
+//     g->pos = Vector2Add(g->pos, Vector2Scale(Vector2Normalize(facing), 2));
+//   }
+// }
 
-    if ( MOD(angle)*RAD2DEG < (GUARD_ANGULAR_VEL*RAD2DEG*delta)/2){
-      g->walking = true;
-      return;
-    }
-    g->facing += ((angle > 0) ? -1 : 1) * GUARD_ANGULAR_VEL * delta;
-  } else {
-		if(CheckCollisionPointCircle(g->pos, waypointPos, 10)){
-			g->currWaypoint = waypoint;
-			g->walking = false;
-		}
-    g->pos = Vector2Add(g->pos, Vector2Scale(Vector2Normalize(facing), 2));
-  }
+void UpdateGuard(Guard *g, int waypoint, double delta) {
+	//Get the vector the guard is facing and the one to the point
+	
+	//Get the angle between the 2 vectors
+	
+	//
 }
