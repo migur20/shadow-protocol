@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MOD(v) (v < 0) ? -v : v
-
 char logBuf[128];
 
 void Log(Player player) {
@@ -14,20 +12,23 @@ void Log(Player player) {
   DrawText(logBuf, 10, 10, 40, BLACK);
 }
 
-void DrawPlayer(Player *p) { DrawRectangleV(p->pos, p->size, PLAYER_COLOR); }
+void DrawPlayer(Player *p) { 
+	DrawRectangleV(p->pos, p->size, PLAYER_COLOR); 
+	if(p->hasChip)
+		DrawCircle(p->pos.x + p->size.x/2, p->pos.y + p->size.y/2,
+				p->size.x/4, CHIP_COLOR);
+}
 
 Vector2 GetGuardFacing(Guard *g) {
-  if (g->facing > 0)
-    return Vector2Rotate(Vector2Scale(FACING_ZERO_VEC, GUARD_RADIUS),
-                         2 * PI - g->facing);
-  else
-    return Vector2Rotate(Vector2Scale(FACING_ZERO_VEC, GUARD_RADIUS),
-                         g->facing);
+  // if (g->facing > 0)
+  //   return Vector2Rotate(FACING_ZERO_VEC, 2*PI - g->facing);
+  // else
+  return Vector2Rotate(FACING_ZERO_VEC, g->facing);
 }
 
 Vector2 *GetVertices(Guard *g) {
   Vector2 *vertices = malloc(sizeof(Vector2) * 3);
-  Vector2 facing = GetGuardFacing(g);
+  Vector2 facing = Vector2Scale(GetGuardFacing(g), GUARD_RADIUS);
   vertices[0] = Vector2Add(g->pos, Vector2Rotate(facing, PI));
   vertices[1] =
       Vector2Add(g->pos, Vector2Rotate(facing, GUARD_ANGLE_DIFF + PI));
@@ -63,6 +64,9 @@ void HandlePlayerMovement(Player *player, double delta) {
 }
 
 bool CheckCollisionPlayerGuard(Player *p, Guard *g) {
+  if (Vector2Distance(p->pos, g->pos) > GUARD_CONE_SIZE * 1.5)
+    return false;
+
   Vector2 pVertices[4] = {
       p->pos,
       {p->pos.x + p->size.x, p->pos.y},
@@ -89,35 +93,43 @@ bool CheckCollisionPlayerGuard(Player *p, Guard *g) {
   return false;
 }
 
-// void UpdateGuard(Guard *g, int waypoint, double delta) {
-//   Vector2 facing = GetGuardFacing(g);
-//   Vector2 waypointPos = g->waypoints[waypoint];
-//   if (!g->walking) {
-//     Vector2 towardsWaypoint = Vector2Subtract(waypointPos, g->pos);
-//     double angle = Vector2Angle(towardsWaypoint, facing);
-//     printf("| %f %f |", MOD(angle)*RAD2DEG,
-//     (GUARD_ANGULAR_VEL*RAD2DEG*delta)/2);
-//
-// //(GUARD_ANGULAR_VEL*RAD2DEG*delta)/2
-//     if ( MOD(angle)*RAD2DEG == 0){
-//       g->walking = true;
-//       return;
-//     }
-//
-//     g->facing += ((angle > 0) ? -1 : 1) * GUARD_ANGULAR_VEL * delta;
-//   } else {
-//     if (CheckCollisionPointCircle(g->pos, waypointPos, 10)) {
-//       g->currWaypoint = waypoint;
-//       g->walking = false;
-//     }
-//     g->pos = Vector2Add(g->pos, Vector2Scale(Vector2Normalize(facing), 2));
-//   }
-// }
+void UpdateGuard(Guard *g, int waypointIndex, double delta) {
+  Vector2 targetPos = g->waypoints[waypointIndex];
+  Vector2 facing = GetGuardFacing(g);
+  Vector2 toTarget = Vector2Normalize(Vector2Subtract(targetPos, g->pos));
 
-void UpdateGuard(Guard *g, int waypoint, double delta) {
-	//Get the vector the guard is facing and the one to the point
-	
-	//Get the angle between the 2 vectors
-	
-	//
+  float angleDiff = Vector2Angle(facing, toTarget);
+
+  if (!g->walking) {
+    // ROTATION PHASE
+    if (fabsf(angleDiff) < (GUARD_ANGULAR_VEL * delta)) {
+      g->walking = true; // Close enough to start walking
+    } else {
+      // Turn in the shortest direction
+      float direction = (angleDiff > 0) ? 1.0f : -1.0f;
+      g->facing += direction * GUARD_ANGULAR_VEL * delta;
+    }
+  } else {
+    // MOVEMENT PHASE
+    if (CheckCollisionPointCircle(g->pos, targetPos, 10)) {
+      g->walking = false;
+      g->currWaypoint = waypointIndex;
+    } else {
+      // Move forward based on current facing
+      g->pos = Vector2Add(g->pos, Vector2Scale(facing, 2.0f));
+    }
+  }
+}
+
+void DrawGuardDebug(Guard *g, Vector2 target) {
+  // 1. Draw a thin line to the target waypoint (The "Intention" line)
+  DrawLineV(g->pos, target, Fade(YELLOW, 0.5f));
+
+  // 2. Draw a bold line showing current facing (The "Nose" line)
+  Vector2 facingDir = GetGuardFacing(g);
+  Vector2 noseEnd = Vector2Add(g->pos, Vector2Scale(facingDir, 50));
+  DrawLineEx(g->pos, noseEnd, 3.0f, RED);
+
+  // 3. Draw a small circle at the waypoint to see the collision radius
+  DrawCircleLinesV(target, 10, MAROON);
 }
