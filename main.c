@@ -1,48 +1,43 @@
-#include "shadow.h"
+#include "maps.h"
+#include <asm-generic/errno.h>
 #include <raylib.h>
 #include <raymath.h>
-#include "maps.h"
+#include <stdio.h>
 
-const int screenWidth = 900;
-const int screenHeight = 900;
+const int screenWidth = 880;
+const int screenHeight = 880;
 
 GAME_STATE state = MENU;
 Player player;
-Guard guard1;
-Guard guard2;
-const Map level1 = {.tiles = {
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                  {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-              }};
 
-#define DEBUG                                                                  \
-  DrawCircleV(guard1.waypoints[0], 10, SKYBLUE);                               \
-  DrawCircleV(guard1.waypoints[1], 10, SKYBLUE);                               \
-  DrawCircleV(guard2.waypoints[0], 10, MAROON);                                \
-  DrawCircleV(guard2.waypoints[1], 10, MAROON);                                \
-  DrawGuardDebug(&guard1, guard1.waypoints[1 - guard1.currWaypoint]);          \
-  DrawGuardDebug(&guard2, guard2.waypoints[1 - guard2.currWaypoint]);          \
-  DrawFps(10, 10);
+Map *level1;
+
+const int level1Tiles[MAP_HEIGHT][MAP_WIDTH] = {
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, CHIP, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, SPAWN, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+};
+
+#define DEBUG DrawFPS(10, 10);
 
 #define DEATH_TEXT "GAME OVER"
 #define DEATH_TEXT_SIZE 50.0
@@ -71,26 +66,38 @@ void DrawMenu() {
 void GameLoop() {
   float delta = GetFrameTime();
   HandlePlayerMovement(&player, delta);
+  MapCollisions(&player, &level1->walls);
 
-  UpdateGuard(&guard1, 1 - guard1.currWaypoint, delta);
-  UpdateGuard(&guard2, 1 - guard2.currWaypoint, delta);
+  Rectangle pRect = {.x = player.pos.x,
+                     .y = player.pos.y,
+                     .width = player.size.x,
+                     .height = player.size.y};
+  if (CheckCollisionCircleRec(level1->chipPos, CHIP_RADIUS, pRect)) {
+    player.hasChip = true;
+  }
 
   BeginDrawing();
   {
     ClearBackground(BG);
-    DrawMap(&level1);
 
-    DrawGuard(&guard1);
-    DrawGuard(&guard2);
-    DrawPlayer(&player);
-
-    if (CheckCollisionPlayerGuard(&player, &guard1) ||
-        CheckCollisionPlayerGuard(&player, &guard2)) {
-      state = GAME_OVER;
-      DrawGameOver();
+    for (int i = 0; i < level1->guards.lenght; i++) {
+      UpdateGuard(&level1->guards.guards[i],
+                  1 - level1->guards.guards[i].currWaypoint, delta);
+      DrawGuard(&level1->guards.guards[i]);
     }
 
-    // DEBUG;
+    DrawMap(level1Tiles, player.hasChip);
+
+    DrawPlayer(&player);
+
+    // TODO
+    // Collisions with guards
+    if (0) {
+      // state = GAME_OVER;
+      printf("GAMEOVER\n");
+      DrawGameOver();
+    }
+    DEBUG;
   }
   EndDrawing();
 }
@@ -99,35 +106,20 @@ int main() {
   InitWindow(screenWidth, screenHeight, "***Shadow Protocol***");
   SetTargetFPS(FPS);
 
+  level1 = LoadMap(level1Tiles);
+
   player = (Player){
-      .pos = {center.x - PLAYER_RADIUS / 2, center.y - PLAYER_RADIUS / 2},
+      .pos = level1->spawn,
       .vel = {0},
       .size = {PLAYER_RADIUS, PLAYER_RADIUS},
       .hasChip = false,
   };
 
-  guard1 = (Guard){
-      .facing = PI / 2,
-      .currWaypoint = 0,
-      .waypoints = {{center.x - 200, center.y - 100},
-                    {center.x - 200, center.y + 100}},
-      .walking = false,
-  };
-  guard1.pos = guard1.waypoints[0];
-
-  guard2 = (Guard){
-      .facing = PI / 2,
-      .currWaypoint = 0,
-      .waypoints = {{center.x + 100, center.y - 100},
-                    {center.x + 100, center.y + 100}},
-      .walking = false,
-  };
-  guard2.pos = guard2.waypoints[0];
-
   while (!WindowShouldClose()) {
     if (state == MENU) {
       BeginDrawing();
       DrawMenu();
+      DrawText(RESTART_TEXT, center.x, center.y, RESTART_TEXT_SIZE, WHITE);
       EndDrawing();
       if (IsKeyPressed(KEY_SPACE))
         state = GAME;

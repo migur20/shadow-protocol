@@ -15,11 +15,11 @@ typedef enum {MENU, GAME, GAME_OVER} GAME_STATE;
 
 #define FRICTION 8.0
 #define PLAYER_MAX_SPEED 10.0
-#define PLAYER_ACC 5.0
+#define PLAYER_ACC 3.0
 
 #define PLAYER_COLOR (Color){160, 45, 80, 0xFF}
 #define PLAYER_SPEED 7.0
-#define PLAYER_RADIUS 30.0
+#define PLAYER_RADIUS 20.0
 
 typedef struct{
 	Vector2 pos; //Top left corner of the rect
@@ -30,9 +30,9 @@ typedef struct{
 
 #define GUARD_COLOR GREEN
 #define GUARD_ANGULAR_VEL PI/4
-#define GUARD_RADIUS 20.0
+#define GUARD_RADIUS 15.0
 #define GUARD_ANGLE_DIFF (PI*2.0)/3.0  // "(PI*2.0)3.0" for equilateral triangle
-#define GUARD_CONE_SIZE 150
+#define GUARD_CONE_SIZE 125
 #define GUARD_CONE_COLOR (Color){253, 249, 0, 50}
 #define FACING_ZERO_VEC (Vector2){1, 0}
 
@@ -45,7 +45,7 @@ typedef struct{
 }Guard;
 
 #define CHIP_COLOR SKYBLUE
-#define CHIP_RADIUS 10
+#define CHIP_RADIUS 5
 
 void DrawPlayer(Player *p);
 
