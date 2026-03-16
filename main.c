@@ -2,40 +2,15 @@
 #include <asm-generic/errno.h>
 #include <raylib.h>
 #include <raymath.h>
-#include <stdio.h>
+#include "madeMaps.h"
 
 const int screenWidth = 880;
 const int screenHeight = 880;
 
 GAME_STATE state = MENU;
 Player player;
-
-Map *level1;
-
-const int level1Tiles[MAP_HEIGHT][MAP_WIDTH] = {
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, CHIP, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, SPAWN, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-};
+Map *currLevel;
+int currlevelTiles[MAP_HEIGHT][MAP_WIDTH] = LEVEL1;
 
 #define DEBUG DrawFPS(10, 10);
 
@@ -59,20 +34,20 @@ void DrawGameOver() {
 }
 
 void DrawMenu() {
-  DrawText("SHADOW", 50, 50, 100, WHITE);
-  DrawText("PROTOCOL", 50, 150, 100, WHITE);
+  DrawText("SHADOW", 70, 50, 100, WHITE);
+  DrawText("PROTOCOL", 70, 150, 100, WHITE);
 }
 
 void GameLoop() {
   float delta = GetFrameTime();
   HandlePlayerMovement(&player, delta);
-  MapCollisions(&player, &level1->walls);
+  MapCollisions(&player, &currLevel->walls);
 
   Rectangle pRect = {.x = player.pos.x,
                      .y = player.pos.y,
                      .width = player.size.x,
                      .height = player.size.y};
-  if (CheckCollisionCircleRec(level1->chipPos, CHIP_RADIUS, pRect)) {
+  if (CheckCollisionCircleRec(currLevel->chipPos, CHIP_RADIUS, pRect)) {
     player.hasChip = true;
   }
 
@@ -80,24 +55,23 @@ void GameLoop() {
   {
     ClearBackground(BG);
 
-    for (int i = 0; i < level1->guards.lenght; i++) {
-      UpdateGuard(&level1->guards.guards[i],
-                  1 - level1->guards.guards[i].currWaypoint, delta);
-      DrawGuard(&level1->guards.guards[i]);
+    for (int i = 0; i < currLevel->guards.lenght; i++) {
+      UpdateGuard(&currLevel->guards.guards[i],
+                  1 - currLevel->guards.guards[i].currWaypoint, delta);
+      DrawGuard(&currLevel->guards.guards[i]);
     }
 
-    DrawMap(level1Tiles, player.hasChip);
+    DrawMap(currlevelTiles, player.hasChip);
 
     DrawPlayer(&player);
 
-    // TODO
     // Collisions with guards
-    if (0) {
-      // state = GAME_OVER;
-      printf("GAMEOVER\n");
-      DrawGameOver();
+    for (int i = 0; i < currLevel->guards.lenght; i++) {
+      if (CheckCollisionPlayerGuard(&player, &currLevel->guards.guards[i])) {
+        state = GAME_OVER;
+      }
     }
-    DEBUG;
+    // DEBUG;
   }
   EndDrawing();
 }
@@ -106,10 +80,11 @@ int main() {
   InitWindow(screenWidth, screenHeight, "***Shadow Protocol***");
   SetTargetFPS(FPS);
 
-  level1 = LoadMap(level1Tiles);
+  Map *level1 = LoadMap(currlevelTiles);
+  currLevel = level1;
 
   player = (Player){
-      .pos = level1->spawn,
+      .pos = currLevel->spawn,
       .vel = {0},
       .size = {PLAYER_RADIUS, PLAYER_RADIUS},
       .hasChip = false,
@@ -119,15 +94,26 @@ int main() {
     if (state == MENU) {
       BeginDrawing();
       DrawMenu();
-      DrawText(RESTART_TEXT, center.x, center.y, RESTART_TEXT_SIZE, WHITE);
       EndDrawing();
       if (IsKeyPressed(KEY_SPACE))
         state = GAME;
     } else if (state == GAME) {
       GameLoop();
     } else if (state == GAME_OVER) {
-      if (IsKeyPressed(KEY_SPACE))
+      if (IsKeyPressed(KEY_SPACE)) {
         state = GAME;
+        player.pos = currLevel->spawn;
+        player.vel = (Vector2){0};
+        player.hasChip = false;
+        for (int i = 0; i < level1->guards.lenght; i++) {
+          currLevel->guards.guards[i].pos =
+              currLevel->guards.guards[i].waypoints[0];
+          currLevel->guards.guards[i].facing = 0;
+        }
+      }
+      BeginDrawing();
+      DrawGameOver();
+      EndDrawing();
     }
   }
 

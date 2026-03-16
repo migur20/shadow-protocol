@@ -12,11 +12,11 @@ void Log(Player player) {
   DrawText(logBuf, 10, 10, 40, BLACK);
 }
 
-void DrawPlayer(Player *p) { 
-	DrawRectangleV(p->pos, p->size, PLAYER_COLOR); 
-	if(p->hasChip)
-		DrawCircle(p->pos.x + p->size.x/2, p->pos.y + p->size.y/2,
-				p->size.x/4, CHIP_COLOR);
+void DrawPlayer(Player *p) {
+  DrawRectangleV(p->pos, p->size, PLAYER_COLOR);
+  if (p->hasChip)
+    DrawCircle(p->pos.x + p->size.x / 2, p->pos.y + p->size.y / 2,
+               p->size.x / 4, CHIP_COLOR);
 }
 
 Vector2 GetGuardFacing(Guard *g) {
@@ -35,6 +35,22 @@ Vector2 *GetVertices(Guard *g) {
   vertices[2] =
       Vector2Add(g->pos, Vector2Rotate(facing, GUARD_ANGLE_DIFF * 2 + PI));
   return vertices;
+}
+
+Vector2 *GetConeVertices(Guard *g) {
+  Vector2 *v = GetVertices(g);
+  // CONE
+  Vector2 v1 = Vector2Add(
+      v[0], Vector2Scale(Vector2Normalize(Vector2Subtract(v[1], v[0])),
+                         GUARD_CONE_SIZE));
+  Vector2 v2 = Vector2Add(
+      v[0], Vector2Scale(Vector2Normalize(Vector2Subtract(v[2], v[0])),
+                         GUARD_CONE_SIZE));
+	Vector2 *vertices = malloc(sizeof(Vector2)*3);
+	vertices[0] = v[0];
+	vertices[1] = v1;
+	vertices[2] = v2;
+	return vertices;
 }
 
 void DrawGuard(Guard *g) {
@@ -66,23 +82,23 @@ void HandlePlayerMovement(Player *player, double delta) {
 bool CheckCollisionPlayerGuard(Player *p, Guard *g) {
   if (Vector2Distance(p->pos, g->pos) > GUARD_CONE_SIZE * 1.5)
     return false;
-
   Vector2 pVertices[4] = {
       p->pos,
       {p->pos.x + p->size.x, p->pos.y},
       {p->pos.x, p->pos.y + p->size.y},
       {p->pos.x + p->size.x, p->pos.y + p->size.y},
   };
-
-  Vector2 *gVertices = GetVertices(g);
-
+  Vector2 *gVertices = GetConeVertices(g);
+  DrawCircleV(gVertices[0], 5, ORANGE);
+  DrawCircleV(gVertices[1], 5, ORANGE);
+  DrawCircleV(gVertices[2], 5, ORANGE);
   // Cycle through the triangle sides
-  for (int t = 0; t < 3; t++) {
+  for (int tIdx = 0; tIdx < 3; tIdx++) {
     // Cycle through the rectangle sides
-    for (int r = 0; r < 4; r++) {
-      if (CheckCollisionLines(gVertices[t], gVertices[(t != 2) ? t + 1 : 0],
-                              pVertices[r], pVertices[(r != 3) ? r + 1 : 0],
-                              NULL)) {
+    for (int rIdx = 0; rIdx < 4; rIdx++) {
+      if (CheckCollisionLines(
+              gVertices[tIdx], gVertices[(tIdx != 2) ? tIdx + 1 : 0],
+              pVertices[rIdx], pVertices[(rIdx != 3) ? rIdx + 1 : 0], NULL)) {
         free(gVertices);
         return true;
       }
